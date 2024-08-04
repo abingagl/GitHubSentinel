@@ -59,7 +59,9 @@ class ReportGenerator:
         with open(report_file_path, 'w+') as report_file:
             report_file.write(report)  # 写入生成的报告
 
-        LOG.info(f"Generated report saved to {report_file_path}")  # 记录生成报告日志
+        LOG.info(f"Generated report saved to {report_file_path}")
+        
+        return report, report_file_path
 
     def generate_report_by_date_range(self, markdown_file_path, days):
         # 生成特定日期范围的报告，流程与日报生成类似
@@ -72,4 +74,6 @@ class ReportGenerator:
         with open(report_file_path, 'w+') as report_file:
             report_file.write(report)
 
-        LOG.info(f"Generated report saved to {report_file_path}")  # 记录生成报告日志
+        LOG.info(f"Generated report saved to {report_file_path}")
+        
+        return report, report_file_path
