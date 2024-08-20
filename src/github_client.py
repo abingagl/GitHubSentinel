@@ -1,7 +1,7 @@
 # src/github_client.py
 
 import requests  # 导入requests库用于HTTP请求
-from datetime import datetime, date, timedelta  # 导入日期处理模块
+from datetime import datetime, date, timedelta, timezone  # 导入日期处理模块
 import os  # 导入os模块用于文件和目录操作
 from logger import LOG  # 导入日志模块
 
@@ -13,9 +13,9 @@ class GitHubClient:
     def fetch_updates(self, repo, since=None, until=None):
         # 获取指定仓库的更新，可以指定开始和结束日期
         updates = {
-            'commits': self.fetch_commits(repo, since, until),  # 获取提交记录
-            'issues': self.fetch_issues(repo, since, until),  # 获取问题
-            'pull_requests': self.fetch_pull_requests(repo, since, until)  # 获取拉取请求
+            'commits': self.fetch_commits_wrapper(repo, since, until),  # 获取提交记录
+            'issues': self.fetch_issues_wrapper(repo, since, until),  # 获取问题
+            'pull_requests': self.fetch_pull_requests_wrapper(repo, since, until)  # 获取拉取请求
         }
         return updates
 
@@ -52,6 +52,33 @@ class GitHubClient:
         response = requests.get(url, headers=self.headers, params=params)
         response.raise_for_status()
         return response.json()
+    
+    def fetch_commits_wrapper(self, repo, since=None, until=None):
+        commits = self.fetch_commits(repo, since, until)
+        if since:
+            since_date = datetime.fromisoformat(since.replace('Z', '+00:00')).astimezone(timezone.utc)
+            commits = [cmt for cmt in commits if datetime.fromisoformat(cmt['commit']['committer']['date'].replace('Z', '+00:00')).astimezone(timezone.utc) >= since_date]
+        if until:
+            until_date = datetime.fromisoformat(until.replace('Z', '+00:00')).astimezone(timezone.utc)
+            commits = [cmt for cmt in commits if datetime.fromisoformat(cmt['commit']['committer']['date'].replace('Z', '+00:00')).astimezone(timezone.utc) <= until_date]
+        return commits
+    
+    def fetch_issues_wrapper(self, repo, since=None, until=None):
+        issues = self.fetch_issues(repo, since, until)
+        if until:
+            until_date = datetime.fromisoformat(until.replace('Z', '+00:00')).astimezone(timezone.utc)
+            issues = [issue for issue in issues if datetime.fromisoformat(issue['closed_at'].replace('Z', '+00:00')).astimezone(timezone.utc) <= until_date]
+        return issues 
+
+    def fetch_pull_requests_wrapper(self, repo, since=None, until=None):
+        requests = self.fetch_pull_requests(repo, since, until)
+        if since:
+            since_date = datetime.fromisoformat(since.replace('Z', '+00:00')).astimezone(timezone.utc)
+            requests = [pr for pr in requests if datetime.fromisoformat(pr['closed_at'].replace('Z', '+00:00')).astimezone(timezone.utc) >= since_date]
+        if until:
+            until_date = datetime.fromisoformat(until.replace('Z', '+00:00')).astimezone(timezone.utc)
+            requests = [pr for pr in requests if datetime.fromisoformat(pr['closed_at'].replace('Z', '+00:00')).astimezone(timezone.utc) <= until_date]
+        return requests 
 
     def export_daily_progress(self, repo):
         today = datetime.now().date().isoformat()  # 获取今天的日期
