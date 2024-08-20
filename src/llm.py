@@ -29,6 +29,7 @@ class LLM:
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",  # 指定使用的模型版本
                 messages=[
+                    {"role": "system", "content": "你是一位专业的报告生成助手，请生成高质量、结构化的中文报告。"},
                     {"role": "user", "content": prompt}  # 提交用户角色的消息
                 ]
             )
