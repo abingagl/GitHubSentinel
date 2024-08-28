@@ -38,4 +38,29 @@ class ReportGenerator:
         LOG.info(f"GitHub 项目报告已保存到 {report_file_path}")
 
         return report, report_file_path
+    
+    def generate_hacker_report(self, markdown_file_path):
+        # 从文件加载Hacker News的提示信息
+        with open("prompts/hacker_news_prompt.txt", "r", encoding='utf-8') as file:
+            hacker_news_prompt = file.read()
+
+        # 读取Markdown文件内容
+        with open(markdown_file_path, 'r', encoding='utf-8') as file:
+            markdown_content = file.read()
+
+        # 使用 LLM 生成 Hacker News 报告
+        report = self.llm.generate_daily_report(
+            markdown_content=markdown_content,
+            system_prompt=hacker_news_prompt,
+            dry_run=False,
+        )
+
+        # 确定报告文件路径，并保存生成的报告
+        report_file_path = os.path.splitext(markdown_file_path)[0] + "_report.md"
+        with open(report_file_path, 'w+', encoding='utf-8') as report_file:
+            report_file.write(report)
+
+        LOG.info(f"Hacker News 报告已保存到 {report_file_path}")
+
+        return report, report_file_path
 

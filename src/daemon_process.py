@@ -5,6 +5,7 @@ import sys  # 导入sys库，用于执行系统相关的操作
 
 from config import Config  # 导入配置管理类
 from github_client import GitHubClient  # 导入GitHub客户端类，处理GitHub API请求
+from hacker_news_client import HackerNewsClient
 from notifier import Notifier  # 导入通知器类，用于发送通知
 from report_generator import ReportGenerator  # 导入报告生成器类
 from llm import LLM  # 导入语言模型类，可能用于生成报告内容
@@ -26,9 +27,21 @@ def github_job(subscription_manager, github_client, report_generator, notifier, 
         markdown_file_path = github_client.export_progress_by_date_range(repo, days)
         # 从Markdown文件自动生成进展简报
         report, report_file_path = report_generator.generate_report_by_date_range(markdown_file_path, days)
-        notifier.notify(repo, report)
+        notifier.notify(repo, report) 
     LOG.info(f"[定时任务执行完毕]")
-
+    
+def hacker_news_job(hacker_news_client, report_generator, notifier):
+    LOG.info("[开始执行Hacker News定时任务]")
+    # 从Hacker News获取当天的热点新闻
+    markdown_file_path = hacker_news_client.export_daily_stories()
+    
+    # 生成报告
+    report, report_file_path = report_generator.generate_hacker_report(markdown_file_path)
+    
+    # 通知订阅者
+    notifier.notify("Hacker News Daily", report)
+    
+    LOG.info("[Hacker News定时任务执行完毕]")
 
 def main():
     # 设置信号处理器
@@ -40,15 +53,24 @@ def main():
     llm = LLM()  # 创建语言模型实例
     report_generator = ReportGenerator(llm)  # 创建报告生成器实例
     subscription_manager = SubscriptionManager(config.subscriptions_file)  # 创建订阅管理器实例
+    
+    hacker_news_client = HackerNewsClient(config.hacker_news)  # 创建GitHub客户端实例
 
     # 启动时立即执行（如不需要可注释）
-    github_job(subscription_manager, github_client, report_generator, notifier, config.freq_days)
+    # github_job(subscription_manager, github_client, report_generator, notifier, config.freq_days)
+    
+    # 启动时立即执行（如不需要可注释）
+    hacker_news_job(hacker_news_client, report_generator, notifier)
 
     # 安排每天的定时任务
     schedule.every(config.freq_days).days.at(
         config.exec_time
     ).do(github_job, subscription_manager, github_client, report_generator, notifier, config.freq_days)
-
+    
+    schedule.every().days.at(
+        config.exec_time
+    ).do(hacker_news_job, hacker_news_client, report_generator, notifier)
+    
     try:
         # 在守护进程中持续运行
         while True:
