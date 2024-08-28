@@ -16,7 +16,11 @@ class Config:
             # 初始化电子邮件设置
             self.email = config.get('email', {})
             # 使用环境变量或配置文件中的电子邮件密码
+            self.email['smtp_server'] = os.getenv('EMAIL_SMTP_SERVER', self.email.get('smtp_server', ''))
+            self.email['smtp_port'] = os.getenv('EMAIL_SMTP_PORT', self.email.get('smtp_port', ''))
             self.email['password'] = os.getenv('EMAIL_PASSWORD', self.email.get('password', ''))
+            self.email['from'] = os.getenv('EMAIL_FROM', self.email.get('from', ''))
+            self.email['to'] = os.getenv('EMAIL_TO', self.email.get('to', ''))
 
             self.subscriptions_file = config.get('subscriptions_file')
             # 默认每天执行
@@ -30,3 +34,6 @@ class Config:
             self.openai_model_name = llm_config.get('openai_model_name', 'gpt-4o-mini')
             self.ollama_model_name = llm_config.get('ollama_model_name', 'llama3')
             self.ollama_api_url = llm_config.get('ollama_api_url', 'http://localhost:11434/api/chat')
+            
+            self.hacker_news = config.get('hacker_news', {})
+
