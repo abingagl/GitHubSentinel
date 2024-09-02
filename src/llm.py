@@ -21,9 +21,9 @@ class LLM:
         
         # 从TXT文件加载系统提示信息
         with open("prompts/report_prompt.txt", "r", encoding='utf-8') as file:
-            self.default_system_prompt = file.read()
+            self.system_prompt = file.read()
 
-    def generate_daily_report(self, markdown_content, dry_run=False):
+    def generate_daily_report(self, markdown_content, system_prompt = None, dry_run=False):
         """
         生成每日报告，根据配置选择不同的模型来处理请求。
         
@@ -33,7 +33,7 @@ class LLM:
         """
         # 准备消息列表，包含系统提示和用户内容
         messages = [
-            {"role": "system", "content": system_prompt},
+            {"role": "system", "content": system_prompt or self.system_prompt},
             {"role": "user", "content": markdown_content},
         ]
 
